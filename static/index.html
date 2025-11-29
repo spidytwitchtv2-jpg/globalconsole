@@ -6,11 +6,12 @@
     <title>Console App</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #1a1a1a;
             color: #ffffff;
             margin: 0;
             padding: 20px;
+            font-size: 14px;
         }
         .container {
             max-width: 1200px;
@@ -18,7 +19,7 @@
         }
         header {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
@@ -28,15 +29,32 @@
         h1 {
             margin: 0;
             color: #4CAF50;
+            font-size: 16px;
+            text-align: left;
         }
         .toggle-container {
             display: flex;
             align-items: center;
             gap: 10px;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+            overflow: hidden;
         }
-        .toggle-label {
-            color: #aaa;
+        .toggle-btn {
+            padding: 8px 16px;
+            background-color: transparent;
+            color: #4CAF50;
+            border: none;
+            cursor: pointer;
             font-size: 14px;
+            transition: all 0.3s;
+        }
+        .toggle-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .toggle-btn:first-child {
+            border-right: 1px solid #4CAF50;
         }
         .toggle-switch {
             position: relative;
@@ -102,49 +120,223 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: opacity 0.15s ease;
         }
         .console-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             padding: 12px 0;
             border-bottom: 1px solid #444;
+            animation: pushIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: top;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .console-item-row {
+            display: flex;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .console-item-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .console-item-row.top-row {
+            align-items: center;
+        }
+        
+        .console-item-row.bottom-row {
+            align-items: center;
+        }
+        .console-item::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        @keyframes pushIn {
+            0% {
+                opacity: 0;
+                transform: scaleY(0.8) translateY(-20px);
+                background-color: transparent;
+            }
+            50% {
+                opacity: 1;
+                transform: scaleY(1.05) translateY(-5px);
+            }
+            100% {
+                opacity: 1;
+                transform: scaleY(1) translateY(0);
+                background-color: transparent;
+            }
+        }
+        .new-item {
+            animation: pushInNew 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .new-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(76, 175, 80, 0.3), rgba(76, 175, 80, 0.1), transparent);
+            animation: highlightSlide 0.8s ease-out forwards;
+            z-index: -1;
+        }
+        @keyframes pushInNew {
+            0% {
+                opacity: 0;
+                transform: scaleY(0.8) translateY(-30px);
+                background-color: rgba(76, 175, 80, 0.2);
+            }
+            50% {
+                opacity: 1;
+                transform: scaleY(1.1) translateY(5px);
+                background-color: rgba(76, 175, 80, 0.3);
+            }
+            100% {
+                opacity: 1;
+                transform: scaleY(1) translateY(0);
+                background-color: rgba(76, 175, 80, 0.1);
+            }
+        }
+        @keyframes highlightSlide {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        @keyframes pushOut {
+            0% {
+                opacity: 1;
+                transform: scaleY(1) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(0.8) translateY(20px);
+            }
         }
         .console-item:last-child {
             border-bottom: none;
         }
         .app-name {
-            flex: 1;
+            flex: 0 0 auto;
             font-weight: bold;
+            min-width: 0; /* Allow flex items to shrink below content size */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
         }
         .carrier {
-            flex: 2;
+            flex: 1;
             display: flex;
             align-items: center;
+            gap: 10px;
+            min-width: 0; /* Allow flex items to shrink below content size */
+        }
+        .carrier .sms {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
+            color: #ccc;
+            margin: 0;
+            padding: 0;
+            min-width: 0; /* Allow flex items to shrink below content size */
         }
         .copy-btn {
             background-color: #555;
             color: white;
             border: none;
             padding: 5px 10px;
-            margin-left: 10px;
             cursor: pointer;
             border-radius: 3px;
             font-size: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .copy-btn:hover {
             background-color: #666;
         }
         .time {
-            flex: 1;
+            flex: 0 0 auto;
             text-align: right;
             color: #aaa;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+            white-space: nowrap;
+            margin-left: 10px;
         }
-        .sms {
-            flex: 3;
-            font-size: 14px;
-            color: #ccc;
-            margin-top: 5px;
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .console-item {
+                padding: 10px 0;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .console-item-row {
+                display: flex;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .console-item-row:last-child {
+                margin-bottom: 0;
+            }
+            
+            .console-item-row.top-row {
+                align-items: center;
+            }
+            
+            .console-item-row.bottom-row {
+                align-items: center;
+            }
+            
+            .app-name {
+                flex: 0 0 auto;
+                margin-right: 10px;
+            }
+            
+            .carrier {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                min-width: 0;
+            }
+            
+            .carrier .sms {
+                margin-left: 10px;
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .time {
+                flex: 0 0 auto;
+                text-align: left;
+                font-size: 11px;
+                margin-left: 10px;
+            }
+            
+            .copy-btn {
+                padding: 4px 8px;
+                font-size: 11px;
+                flex-shrink: 0;
+            }
         }
         .status {
             height: 10px;
@@ -250,6 +442,151 @@
             font-size: 14px;
             margin-top: 5px;
         }
+        /* Grid View Styles */
+        .grid-container {
+            display: block;
+        }
+        .grid-container.hidden {
+            display: none;
+        }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 10px 0;
+        }
+        .grid-card {
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .grid-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .card-logo {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .card-app-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-time {
+            font-size: 12px;
+            color: #aaa;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #444;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-message {
+            padding: 10px 0;
+            border-bottom: 1px solid #444;
+        }
+        .modal-message:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .modal-number-copy {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Mobile-specific styles for modal */
+        @media (max-width: 768px) {
+            .modal-message-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .modal-number-copy {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .time {
+                align-self: flex-end;
+                font-size: 11px;
+            }
+        }
+        
+        /* Toast notification styles */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -257,14 +594,27 @@
         <header>
             <h1>Console App</h1>
             <div class="toggle-container">
-                <span class="toggle-label">List</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="viewToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">Group</span>
+                <button class="toggle-btn active" id="listViewBtn">
+                    <span>📋 List</span>
+                </button>
+                <button class="toggle-btn" id="gridViewBtn">
+                    <span>📊 Grid</span>
+                </button>
             </div>
         </header>
+        
+        <!-- Modal for displaying messages -->
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle">Messages</h2>
+                    <button class="close-modal" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Messages will be loaded here -->
+                </div>
+            </div>
+        </div>
         
         <div class="console-container">
             <div id="listView" class="list-container">
@@ -277,65 +627,202 @@
                     <div class="loading">Loading data...</div>
                 </div>
             </div>
+            <div id="gridView" class="grid-container hidden">
+                <div id="gridData">
+                    <div class="loading">Loading data...</div>
+                </div>
+            </div>
         </div>
+            
+        <!-- Toast notification -->
+        <div id="toast" class="toast">Text copied!</div>
     </div>
 
     <script>
         // Global variables
         let lastData = null;
         let refreshInterval = null;
-        let currentView = 'list'; // 'list' or 'accordion'
+        let currentView = 'list'; // 'list', 'accordion', or 'grid'
+        let isFirstLoad = true; // Track if this is the first load
 
         // DOM elements
         const consoleDataElement = document.getElementById('consoleData');
         const accordionDataElement = document.getElementById('accordionData');
         const listViewElement = document.getElementById('listView');
         const accordionViewElement = document.getElementById('accordionView');
-        const viewToggle = document.getElementById('viewToggle');
+        const gridViewElement = document.getElementById('gridView');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const messageModal = document.getElementById('messageModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const closeModal = document.getElementById('closeModal');
+        
+        // Animation tracking
+        let previousMessages = [];
 
-        // Format time ago
-        function timeAgo(dateInput) {
-            const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-            if (isNaN(date.getTime())) {
+        // Format time ago with Bangladesh timezone conversion
+        function timeAgo(timeInput) {
+            // Handle case where we only have time without date
+            if (!timeInput || timeInput === 'unknown time') {
                 return 'unknown time';
             }
-            const seconds = Math.floor((new Date() - date) / 1000);
             
-            let interval = seconds / 31536000;
-            if (interval > 1) {
-                return Math.floor(interval) + " years ago";
+            // Convert to string if it's not already
+            const timeString = String(timeInput);
+            
+            // If timeString is a time-only format like "20:23:24"
+            if (timeString.includes(':') && !timeString.includes('-')) {
+                // Parse the time string assuming it's from today
+                const today = new Date();
+                
+                // Get Bangladesh time (UTC+6)
+                const bdOffset = 6 * 60; // Bangladesh is UTC+6 in minutes
+                const utc = today.getTime() + (today.getTimezoneOffset() * 60000);
+                const bdTime = new Date(utc + (bdOffset * 60000));
+                
+                const [hours, minutes, sec] = timeString.split(':').map(Number);
+                
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                    // Create date object with the time string (assuming it's in Bangladesh time)
+                    const date = new Date(bdTime.getFullYear(), bdTime.getMonth(), bdTime.getDate(), hours, minutes, sec || 0);
+                    
+                    // Calculate time difference using Bangladesh time
+                    const diffMs = bdTime - date;
+                    const secondsElapsed = Math.floor(diffMs / 1000);
+                    
+                    // Handle negative time (future time) - show as "Just now"
+                    if (secondsElapsed < 0) {
+                        return "Just now";
+                    }
+                    
+                    // Return relative time in proper format
+                    if (secondsElapsed < 60) {
+                        return Math.floor(secondsElapsed) + "s ago BDT";
+                    } else if (secondsElapsed < 3600) {
+                        const mins = Math.floor(secondsElapsed / 60);
+                        return mins + "m ago BDT";
+                    } else if (secondsElapsed < 86400) {
+                        const hrs = Math.floor(secondsElapsed / 3600);
+                        return hrs + "h ago BDT";
+                    } else {
+                        // More than a day, just show the time with BDT
+                        return timeString + " BDT";
+                    }
+                } else {
+                    // Invalid time format, return as-is with BDT
+                    return timeString + " BDT";
+                }
             }
             
-            interval = seconds / 2592000;
-            if (interval > 1) {
-                return Math.floor(interval) + " months ago";
+            // If it's a full datetime string, convert it
+            const date = timeInput instanceof Date ? timeInput : new Date(timeInput);
+            if (isNaN(date.getTime())) {
+                return timeString + " BDT"; // Return as-is if invalid
             }
             
-            interval = seconds / 86400;
-            if (interval > 1) {
-                return Math.floor(interval) + " days ago";
+            // Convert to Bangladesh time for comparison
+            const bdOffset = 6 * 60; // Bangladesh is UTC+6 in minutes
+            const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+            const bdDateTime = new Date(utc + (bdOffset * 60000));
+            
+            const bdNow = new Date();
+            const utcNow = bdNow.getTime() + (bdNow.getTimezoneOffset() * 60000);
+            const bdCurrentTime = new Date(utcNow + (bdOffset * 60000));
+            
+            const seconds = Math.floor((bdCurrentTime - bdDateTime) / 1000);
+            
+            // Handle negative time (future time) - show as "Just now"
+            if (seconds < 0) {
+                return "Just now";
             }
             
-            interval = seconds / 3600;
-            if (interval > 1) {
-                return Math.floor(interval) + " hours ago";
+            // Less than 60 seconds
+            if (seconds < 60) {
+                return Math.floor(seconds) + "s ago BDT";
             }
             
-            interval = seconds / 60;
-            if (interval > 1) {
-                return Math.floor(interval) + " minutes ago";
+            // Less than 1 hour
+            if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                return minutes + "m ago BDT";
             }
             
-            return Math.floor(seconds) + " seconds ago";
+            // Less than 1 day
+            if (seconds < 86400) {
+                const hours = Math.floor(seconds / 3600);
+                return hours + "h ago BDT";
+            }
+            
+            // Less than 1 week
+            if (seconds < 604800) {
+                const days = Math.floor(seconds / 86400);
+                return days + "d ago BDT";
+            }
+            
+            // More than 1 week
+            const weeks = Math.floor(seconds / 604800);
+            return weeks + "w ago BDT";
         }
 
         // Copy to clipboard
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('Copied to clipboard: ' + text);
+                showToast('Text copied!');
             }).catch(err => {
                 console.error('Failed to copy: ', err);
+                showToast('Failed to copy text');
             });
+        }
+        
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Generate emoji/logo based on app name
+        function getAppLogo(appName) {
+            const logos = {
+                'Facebook': '📘',
+                'Google': '🔍',
+                'Twitter': '🐦',
+                'Instagram': '📸',
+                'LinkedIn': '👔',
+                'Snapchat': '👻',
+                'WhatsApp': '💬',
+                'Telegram': '✈️',
+                'TikTok': '🎵',
+                'YouTube': '📺',
+                'Amazon': '📦',
+                'Netflix': '🎬',
+                'Spotify': '🎧',
+                'Microsoft': '💻',
+                'Apple': '🍎',
+                'Samsung': '📱',
+                'PayPal': '💰',
+                'Bank': '🏦',
+                'OTP': '🔢',
+                'Code': '🔑'
+            };
+            
+            // Check for exact matches first
+            if (logos[appName]) return logos[appName];
+            
+            // Check for partial matches
+            for (const [key, logo] of Object.entries(logos)) {
+                if (appName.toLowerCase().includes(key.toLowerCase())) {
+                    return logo;
+                }
+            }
+            
+            // Default logo
+            return '📱';
         }
 
         // Render console data in list view
@@ -345,23 +832,139 @@
                 return;
             }
 
+            // On first load, show all items at once
+            if (isFirstLoad) {
+                updateFullList(data.messages);
+                isFirstLoad = false;
+                // Update previous messages for next comparison
+                previousMessages = [...data.messages];
+                return;
+            }
+
+            // Create a map of previous messages for comparison
+            const previousMessageMap = {};
+            previousMessages.forEach((msg, index) => {
+                previousMessageMap[`${msg.app_name}-${msg.carrier}-${msg.time}`] = index;
+            });
+            
+            // Find new messages
+            const newMessages = [];
+            const existingMessages = [];
+            
+            data.messages.forEach((item, index) => {
+                const messageKey = `${item.app_name}-${item.carrier}-${item.time}`;
+                if (!(messageKey in previousMessageMap)) {
+                    newMessages.push(item);
+                } else {
+                    existingMessages.push(item);
+                }
+            });
+            
+            // If we have new messages, animate them in
+            if (newMessages.length > 0) {
+                // Add new items at the top with animation
+                newMessages.forEach((item, index) => {
+                    setTimeout(() => {
+                        addNewItemToTop(item);
+                    }, index * 100); // Stagger the animations
+                });
+            } else {
+                // No new messages, just update the list normally
+                updateFullList(data.messages);
+            }
+            
+            // Update previous messages for next comparison
+            previousMessages = [...data.messages];
+        }
+        
+        // Add a new item to the top with animation
+        function addNewItemToTop(item) {
+            // Use the color from the data or default to white
+            const appColor = item.color || '#ffffff';
+            
+            // Extract only the numeric part for copying
+            let carrierNumber = item.carrier;
+            const numericPart = item.carrier.replace(/[^0-9]/g, '');
+            // For ranges like 236724XXX, we want to show 236724XXXX
+            if (numericPart.length >= 6) {
+                carrierNumber = numericPart.substring(0, 6) + 'XXXX';
+            } else if (numericPart.length > 0) {
+                carrierNumber = numericPart + 'XXXX';
+            } else {
+                carrierNumber = 'XXXX';
+            }
+            
+            // Create new item element
+            const newItem = document.createElement('div');
+            newItem.className = 'console-item new-item';
+            newItem.innerHTML = `
+                <div class="app-name" style="color: ${appColor}">${item.app_name}</div>
+                <div class="carrier" title="${item.carrier}">
+                    ${carrierNumber}
+                    <button class="copy-btn" onclick="copyToClipboard('${carrierNumber}')">Copy</button>
+                    <span class="sms">${item.sms}</span>
+                </div>
+                <div class="time">${timeAgo(item.time)}</div>
+            `;
+            
+            // Add to the top of the list
+            consoleDataElement.insertBefore(newItem, consoleDataElement.firstChild);
+            
+            // Remove last item to maintain list length (simulate push effect)
+            if (consoleDataElement.children.length > 20) { // Keep max 20 items
+                const lastItem = consoleDataElement.lastChild;
+                if (lastItem && lastItem.classList.contains('console-item')) {
+                    lastItem.style.animation = 'pushOut 0.3s ease-out forwards';
+                    setTimeout(() => {
+                        if (lastItem.parentNode) {
+                            lastItem.parentNode.removeChild(lastItem);
+                        }
+                    }, 300);
+                }
+            }
+        }
+        
+        // Update the full list (fallback when no new items)
+        function updateFullList(messages) {
             let html = '';
-            data.messages.forEach(item => {
+            messages.forEach(item => {
                 // Use the color from the data or default to white
                 const appColor = item.color || '#ffffff';
+                
+                // Extract only the numeric part for copying
+                let carrierNumber = item.carrier;
+                const numericPart = item.carrier.replace(/[^0-9]/g, '');
+                // For ranges like 236724XXX, we want to show 236724XXXX
+                if (numericPart.length >= 6) {
+                    carrierNumber = numericPart.substring(0, 6) + 'XXXX';
+                } else if (numericPart.length > 0) {
+                    carrierNumber = numericPart + 'XXXX';
+                } else {
+                    carrierNumber = 'XXXX';
+                }
+                
                 html += `
                 <div class="console-item">
-                    <div class="app-name" style="color: ${appColor}">${item.app_name}</div>
-                    <div class="carrier">
-                        ${item.carrier}
-                        <button class="copy-btn" onclick="copyToClipboard('${item.carrier}')">Copy</button>
+                    <div class="console-item-row top-row">
+                        <div class="app-name" style="color: ${appColor}">${item.app_name}</div>
+                        <div class="carrier" title="${item.carrier}">
+                            ${carrierNumber}
+                            <button class="copy-btn" onclick="copyToClipboard('${carrierNumber}')" title="Copy to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="time">${item.time} (${timeAgo(new Date(item.time))})</div>
+                    <div class="console-item-row bottom-row">
+                        <span class="sms">${item.sms}</span>
+                        <div class="time">${timeAgo(item.time)}</div>
+                    </div>
                 </div>
-                <div class="sms">${item.sms}</div>
                 `;
             });
-
+            
             consoleDataElement.innerHTML = html;
         }
 
@@ -422,11 +1025,24 @@
                             ${group.messages.map(item => `
                                 <div class="accordion-item">
                                     <div class="accordion-item-header">
-                                        <div class="carrier">
-                                            ${item.carrier}
-                                            <button class="copy-btn" onclick="copyToClipboard('${item.carrier}')">Copy</button>
+                                        <div class="carrier" title="${item.carrier}">
+                                            ${(() => {
+                                                const numericPart = item.carrier.replace(/[^0-9]/g, '');
+                                                const carrierNumber = numericPart.length >= 6 ? numericPart.substring(0, 6) + 'XXXX' : numericPart.length > 0 ? numericPart + 'XXXX' : 'XXXX';
+                                                return carrierNumber;
+                                            })()}
+                                            <button class="copy-btn" onclick="copyToClipboard('${(() => {
+                                                const numericPart = item.carrier.replace(/[^0-9]/g, '');
+                                                const carrierNumber = numericPart.length >= 6 ? numericPart.substring(0, 6) + 'XXXX' : numericPart.length > 0 ? numericPart + 'XXXX' : 'XXXX';
+                                                return carrierNumber;
+                                            })()}')" title="Copy to clipboard">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                                </svg>
+                                            </button>
                                         </div>
-                                        <div class="time">${item.time} (${timeAgo(new Date(item.time))})</div>
+                                        <div class="time">${timeAgo(item.time)}</div>
                                     </div>
                                     <div class="accordion-item-sms">${item.sms}</div>
                                 </div>
@@ -447,19 +1063,37 @@
             content.classList.toggle('active');
         }
 
-        // Toggle view between list and accordion
-        function toggleView() {
-            currentView = viewToggle.checked ? 'accordion' : 'list';
+        // Toggle view between list, accordion, and grid
+        function toggleView(view) {
+            // Update active button
+            if (view === 'list') {
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+            } else if (view === 'grid') {
+                listViewBtn.classList.remove('active');
+                gridViewBtn.classList.add('active');
+            }
             
+            currentView = view;
+            
+            // Hide all views
+            listViewElement.classList.add('hidden');
+            accordionViewElement.classList.remove('active');
+            if (gridViewElement) gridViewElement.classList.add('hidden');
+            
+            // Show selected view
             if (currentView === 'accordion') {
-                listViewElement.classList.add('hidden');
                 accordionViewElement.classList.add('active');
                 if (lastData) {
                     renderAccordionData(lastData);
                 }
+            } else if (currentView === 'grid') {
+                if (gridViewElement) gridViewElement.classList.remove('hidden');
+                if (lastData) {
+                    renderGridData(lastData);
+                }
             } else {
                 listViewElement.classList.remove('hidden');
-                accordionViewElement.classList.remove('active');
                 if (lastData) {
                     renderConsoleData(lastData);
                 }
@@ -473,7 +1107,6 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    console.log('Token refreshed:', data);
                     return data.token;
                 } else {
                     throw new Error(data.detail || 'Failed to refresh token');
@@ -498,13 +1131,22 @@
                         // Render based on current view
                         if (currentView === 'accordion') {
                             renderAccordionData(lastData);
+                        } else if (currentView === 'grid') {
+                            renderGridData(lastData);
                         } else {
                             renderConsoleData(lastData);
+                        }
+                        
+                        // Update modal if it's open
+                        if (messageModal.classList.contains('active')) {
+                            // The modal will automatically update when reopened
                         }
                     } else if (lastData) {
                         // Keep showing old data on failure
                         if (currentView === 'accordion') {
                             renderAccordionData(lastData);
+                        } else if (currentView === 'grid') {
+                            renderGridData(lastData);
                         } else {
                             renderConsoleData(lastData);
                         }
@@ -518,12 +1160,15 @@
                 if (lastData) {
                     if (currentView === 'accordion') {
                         renderAccordionData(lastData);
+                    } else if (currentView === 'grid') {
+                        renderGridData(lastData);
                     } else {
                         renderConsoleData(lastData);
                     }
                 } else {
                     // If no previous data, show a more user-friendly message
-                    const targetElement = currentView === 'accordion' ? accordionDataElement : consoleDataElement;
+                    const targetElement = currentView === 'accordion' ? accordionDataElement : 
+                                         currentView === 'grid' ? gridViewElement : consoleDataElement;
                     targetElement.innerHTML = '<div class="loading">Waiting for data...</div>';
                 }
             }
@@ -542,8 +1187,110 @@
             }, 5000);
         }
 
+        // Render console data in grid view
+        function renderGridData(data) {
+            if (!data || !data.messages || data.messages.length === 0) {
+                gridViewElement.innerHTML = '<div class="loading">No data available</div>';
+                return;
+            }
+
+            // Group messages by app_name
+            const grouped = {};
+            data.messages.forEach(item => {
+                const appName = item.app_name || 'Unknown';
+                if (!grouped[appName]) {
+                    grouped[appName] = {
+                        color: item.color || '#ffffff',
+                        messages: [],
+                        latestTime: new Date(item.time || Date.now())
+                    };
+                }
+                grouped[appName].messages.push(item);
+                // Update latest time
+                const itemTime = new Date(item.time || Date.now());
+                if (itemTime > grouped[appName].latestTime) {
+                    grouped[appName].latestTime = itemTime;
+                }
+            });
+
+            // Sort groups by latest message time (newest first)
+            const sortedGroups = Object.entries(grouped).sort((a, b) => {
+                return b[1].latestTime - a[1].latestTime;
+            });
+
+            let html = '<div class="grid-layout">';
+            sortedGroups.forEach(([appName, group]) => {
+                const appColor = group.color;
+                const messageCount = group.messages.length;
+                const latestMessage = group.messages[0]; // Already sorted
+                const latestTime = timeAgo(latestMessage.time);
+                const appLogo = getAppLogo(appName);
+                
+                html += `
+                <div class="grid-card" onclick="openModal('${appName}', ${JSON.stringify(group.messages).replace(/"/g, '&quot;')})">
+                    <div class="card-logo">${appLogo}</div>
+                    <div class="card-app-name">${appName}</div>
+                    <div class="card-time">${latestTime}</div>
+                </div>
+                `;
+            });
+            html += '</div>';
+
+            gridViewElement.innerHTML = html;
+        }
+        
+        // Open modal with messages
+        function openModal(appName, messages) {
+            modalTitle.textContent = `${appName} Messages`;
+            
+            // Sort messages by time (newest first)
+            messages.sort((a, b) => {
+                const timeA = new Date(a.time || 0).getTime();
+                const timeB = new Date(b.time || 0).getTime();
+                return timeB - timeA;
+            });
+            
+            let html = '';
+            messages.forEach(item => {
+                const numericPart = item.carrier.replace(/[^0-9]/g, '');
+                const carrierNumber = numericPart.length >= 6 ? numericPart.substring(0, 6) + 'XXXX' : numericPart.length > 0 ? numericPart + 'XXXX' : 'XXXX';
+                html += `
+                <div class="modal-message">
+                    <div class="modal-message-header">
+                        <div class="modal-number-copy">
+                            <strong>${carrierNumber}</strong>
+                            <button class="copy-btn" onclick="copyToClipboard('${carrierNumber}')" title="Copy to clipboard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="time">${timeAgo(item.time)}</div>
+                    </div>
+                    <div style="margin-top: 8px;">${item.sms}</div>
+                </div>
+                `;
+            });
+            
+            modalBody.innerHTML = html;
+            messageModal.classList.add('active');
+        }
+        
+        // Close modal
+        function closeMessageModal() {
+            messageModal.classList.remove('active');
+        }
+        
         // Event listeners
-        viewToggle.addEventListener('change', toggleView);
+        listViewBtn.addEventListener('click', () => toggleView('list'));
+        gridViewBtn.addEventListener('click', () => toggleView('grid'));
+        closeModal.addEventListener('click', closeMessageModal);
+        messageModal.addEventListener('click', (e) => {
+            if (e.target === messageModal) {
+                closeMessageModal();
+            }
+        });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
