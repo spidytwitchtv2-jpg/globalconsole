@@ -318,6 +318,7 @@ async def get_console_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 # Serve static files (for frontend)
+<<<<<<< HEAD
 # Use absolute path to ensure it works in different environments (local, Render, etc.)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 
@@ -346,6 +347,10 @@ if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static_files")
     except Exception as e:
         print(f"Warning: Could not mount static files: {e}")
+=======
+if os.path.exists("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+>>>>>>> 2019967b1e5d1aca92029604547cdc9354676815
 
 if __name__ == "__main__":
     import uvicorn

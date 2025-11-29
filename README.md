@@ -47,6 +47,7 @@ A FastAPI application with SQLite database that provides authentication and cons
 
 ## Production Deployment
 
+<<<<<<< HEAD
 ### Render.com (Recommended - Easy Setup)
 
 For Render deployment, see [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
@@ -58,6 +59,8 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 
 ### Namecheap (Shared Hosting)
 
+=======
+>>>>>>> 2019967b1e5d1aca92029604547cdc9354676815
 For Namecheap hosting deployment, see [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
 Quick steps:
@@ -99,9 +102,13 @@ app/
 ├── install_web.py      # Web-based installer script
 ├── start.bat           # Local startup script
 ├── README.md           # This file
+<<<<<<< HEAD
 ├── DEPLOYMENT.md       # Namecheap deployment guide
 ├── RENDER_DEPLOYMENT.md # Render.com deployment guide
 ├── render.yaml         # Render configuration file
+=======
+├── DEPLOYMENT.md       # Deployment guide
+>>>>>>> 2019967b1e5d1aca92029604547cdc9354676815
 └── static/             # Frontend assets
     └── index.html       # Main frontend page
 ```
