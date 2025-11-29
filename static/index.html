@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        h1 {
+            margin: 0;
+            color: #4CAF50;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .console-container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .console-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #444;
+        }
+        .console-item:last-child {
+            border-bottom: none;
+        }
+        .app-name {
+            flex: 1;
+            font-weight: bold;
+        }
+        .carrier {
+            flex: 2;
+            display: flex;
+            align-items: center;
+        }
+        .copy-btn {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background-color: #666;
+        }
+        .time {
+            flex: 1;
+            text-align: right;
+            color: #aaa;
+        }
+        .sms {
+            flex: 3;
+            font-size: 14px;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        .status {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .status.active {
+            background-color: #4CAF50;
+        }
+        .status.pending {
+            background-color: #ff9800;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Console App</h1>
+        </header>
+        
+        <div class="console-container">
+            <div id="consoleData">
+                <div class="loading">Loading data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let lastData = null;
+        let refreshInterval = null;
+
+        // DOM elements
+        const consoleDataElement = document.getElementById('consoleData');
+
+        // Format time ago
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            let interval = seconds / 31536000;
+            if (interval > 1) {
+                return Math.floor(interval) + " years ago";
+            }
+            
+            interval = seconds / 2592000;
+            if (interval > 1) {
+                return Math.floor(interval) + " months ago";
+            }
+            
+            interval = seconds / 86400;
+            if (interval > 1) {
+                return Math.floor(interval) + " days ago";
+            }
+            
+            interval = seconds / 3600;
+            if (interval > 1) {
+                return Math.floor(interval) + " hours ago";
+            }
+            
+            interval = seconds / 60;
+            if (interval > 1) {
+                return Math.floor(interval) + " minutes ago";
+            }
+            
+            return Math.floor(seconds) + " seconds ago";
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard: ' + text);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Render console data
+        function renderConsoleData(data) {
+            if (!data || !data.messages || data.messages.length === 0) {
+                consoleDataElement.innerHTML = '<div class="loading">No data available</div>';
+                return;
+            }
+
+            let html = '';
+            data.messages.forEach(item => {
+                // Use the color from the data or default to white
+                const appColor = item.color || '#ffffff';
+                html += `
+                <div class="console-item">
+                    <div class="app-name" style="color: ${appColor}">${item.app_name}</div>
+                    <div class="carrier">
+                        ${item.carrier}
+                        <button class="copy-btn" onclick="copyToClipboard('${item.carrier}')">Copy</button>
+                    </div>
+                    <div class="time">${item.time} (${timeAgo(new Date())})</div>
+                </div>
+                <div class="sms">${item.sms}</div>
+                `;
+            });
+
+            consoleDataElement.innerHTML = html;
+        }
+
+        // Refresh token
+        async function refreshToken() {
+            try {
+                const response = await fetch('/api/refresh-token');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('Token refreshed:', data);
+                    return data.token;
+                } else {
+                    throw new Error(data.detail || 'Failed to refresh token');
+                }
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                // Don't show alert, just log the error and continue
+                return null;
+            }
+        }
+
+        // Fetch console data
+        async function fetchConsoleData() {
+            try {
+                const response = await fetch('/api/console-data');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Only update if we have new data
+                    if (data && data.data) {
+                        lastData = data.data;
+                        renderConsoleData(lastData);
+                    } else if (lastData) {
+                        // Keep showing old data on failure
+                        renderConsoleData(lastData);
+                    }
+                } else {
+                    throw new Error(data.detail || 'Failed to fetch data');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // Keep showing old data on failure
+                if (lastData) {
+                    renderConsoleData(lastData);
+                } else {
+                    // If no previous data, show a more user-friendly message
+                    consoleDataElement.innerHTML = '<div class="loading">Waiting for data...</div>';
+                }
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            refreshInterval = setInterval(async () => {
+                const token = await refreshToken();
+                // Even if token refresh fails, still try to fetch data
+                await fetchConsoleData();
+            }, 5000);
+        }
+
+        // Event listeners
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Show loading message
+            consoleDataElement.innerHTML = '<div class="loading">Initializing application...</div>';
+            
+            try {
+                // Perform initial login
+                const loginResponse = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'Aktermamber.00.7@gmail.com',
+                        password: 'Bd55555$'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+                
+                // Initial load
+                await refreshToken();
+                await fetchConsoleData();
+                
+                // Start auto-refresh
+                startAutoRefresh();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                consoleDataElement.innerHTML = '<div class="loading">Error initializing application. Please refresh the page.</div>';
+            }
+        });
+    </script>
+</body>
+</html>

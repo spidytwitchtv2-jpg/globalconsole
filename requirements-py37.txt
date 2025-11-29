@@ -1,0 +1,29 @@
+# Requirements for Python 3.7 compatibility
+# Use this file if your server has Python 3.7
+# Install with: pip3 install --user -r requirements-py37.txt
+
+# Core framework - compatible with Python 3.7+
+fastapi>=0.95.0,<0.100.0
+uvicorn[standard]>=0.20.0,<0.25.0
+# WSGI adapter for Passenger - asgiref converts ASGI to WSGI
+asgiref>=3.4.0,<4.0.0
+
+# Database - using SQLAlchemy 1.4.x for Python 3.7 compatibility
+sqlalchemy>=1.4.0,<2.0.0
+
+# Data validation - Pydantic v1 for Python 3.7 compatibility
+pydantic>=1.10.0,<2.0.0
+
+# HTTP requests
+requests>=2.28.0,<3.0.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0,<4.0.0
+passlib[bcrypt]>=1.7.4,<2.0.0
+
+# Form data handling
+python-multipart>=0.0.5,<1.0.0
+
+# Type hints support for older Python versions
+typing_extensions>=4.0.0,<5.0.0
+
