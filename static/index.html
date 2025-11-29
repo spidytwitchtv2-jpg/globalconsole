@@ -20,6 +20,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #333;
@@ -27,6 +28,59 @@
         h1 {
             margin: 0;
             color: #4CAF50;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-label {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 30px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+        .view-label {
+            color: #4CAF50;
+            font-size: 12px;
+            font-weight: bold;
         }
         .controls {
             display: flex;
@@ -110,17 +164,118 @@
             padding: 20px;
             color: #aaa;
         }
+        /* Accordion Styles */
+        .accordion-container {
+            display: none;
+        }
+        .accordion-container.active {
+            display: block;
+        }
+        .list-container {
+            display: block;
+        }
+        .list-container.hidden {
+            display: none;
+        }
+        .accordion-group {
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .accordion-header {
+            background-color: #3a3a3a;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .accordion-header:hover {
+            background-color: #444;
+        }
+        .accordion-header.active {
+            background-color: #4a4a4a;
+        }
+        .accordion-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+        .accordion-count {
+            background-color: #555;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .accordion-icon {
+            transition: transform 0.3s;
+            color: #aaa;
+        }
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: #2d2d2d;
+        }
+        .accordion-content.active {
+            max-height: 5000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .accordion-messages {
+            padding: 10px 15px;
+        }
+        .accordion-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+        .accordion-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .accordion-item-sms {
+            color: #ccc;
+            font-size: 14px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Console App</h1>
+            <div class="toggle-container">
+                <span class="toggle-label">List</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="viewToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Group</span>
+            </div>
         </header>
         
         <div class="console-container">
-            <div id="consoleData">
-                <div class="loading">Loading data...</div>
+            <div id="listView" class="list-container">
+                <div id="consoleData">
+                    <div class="loading">Loading data...</div>
+                </div>
+            </div>
+            <div id="accordionView" class="accordion-container">
+                <div id="accordionData">
+                    <div class="loading">Loading data...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -129,12 +284,21 @@
         // Global variables
         let lastData = null;
         let refreshInterval = null;
+        let currentView = 'list'; // 'list' or 'accordion'
 
         // DOM elements
         const consoleDataElement = document.getElementById('consoleData');
+        const accordionDataElement = document.getElementById('accordionData');
+        const listViewElement = document.getElementById('listView');
+        const accordionViewElement = document.getElementById('accordionView');
+        const viewToggle = document.getElementById('viewToggle');
 
         // Format time ago
-        function timeAgo(date) {
+        function timeAgo(dateInput) {
+            const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+            if (isNaN(date.getTime())) {
+                return 'unknown time';
+            }
             const seconds = Math.floor((new Date() - date) / 1000);
             
             let interval = seconds / 31536000;
@@ -174,7 +338,7 @@
             });
         }
 
-        // Render console data
+        // Render console data in list view
         function renderConsoleData(data) {
             if (!data || !data.messages || data.messages.length === 0) {
                 consoleDataElement.innerHTML = '<div class="loading">No data available</div>';
@@ -192,13 +356,114 @@
                         ${item.carrier}
                         <button class="copy-btn" onclick="copyToClipboard('${item.carrier}')">Copy</button>
                     </div>
-                    <div class="time">${item.time} (${timeAgo(new Date())})</div>
+                    <div class="time">${item.time} (${timeAgo(new Date(item.time))})</div>
                 </div>
                 <div class="sms">${item.sms}</div>
                 `;
             });
 
             consoleDataElement.innerHTML = html;
+        }
+
+        // Render console data in accordion view (grouped by app_name)
+        function renderAccordionData(data) {
+            if (!data || !data.messages || data.messages.length === 0) {
+                accordionDataElement.innerHTML = '<div class="loading">No data available</div>';
+                return;
+            }
+
+            // Group messages by app_name
+            const grouped = {};
+            data.messages.forEach(item => {
+                const appName = item.app_name || 'Unknown';
+                if (!grouped[appName]) {
+                    grouped[appName] = {
+                        color: item.color || '#ffffff',
+                        messages: [],
+                        latestTime: new Date(item.time || Date.now())
+                    };
+                }
+                grouped[appName].messages.push(item);
+                // Update latest time
+                const itemTime = new Date(item.time || Date.now());
+                if (itemTime > grouped[appName].latestTime) {
+                    grouped[appName].latestTime = itemTime;
+                }
+            });
+
+            // Sort groups by latest message time (newest first)
+            const sortedGroups = Object.entries(grouped).sort((a, b) => {
+                return b[1].latestTime - a[1].latestTime;
+            });
+
+            let html = '';
+            sortedGroups.forEach(([appName, group]) => {
+                const appColor = group.color;
+                const messageCount = group.messages.length;
+                
+                // Sort messages within group by time (newest first)
+                group.messages.sort((a, b) => {
+                    const timeA = new Date(a.time || 0).getTime();
+                    const timeB = new Date(b.time || 0).getTime();
+                    return timeB - timeA;
+                });
+
+                html += `
+                <div class="accordion-group">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <div class="accordion-title">
+                            <span style="color: ${appColor}">${appName}</span>
+                            <span class="accordion-count">${messageCount}</span>
+                        </div>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-messages">
+                            ${group.messages.map(item => `
+                                <div class="accordion-item">
+                                    <div class="accordion-item-header">
+                                        <div class="carrier">
+                                            ${item.carrier}
+                                            <button class="copy-btn" onclick="copyToClipboard('${item.carrier}')">Copy</button>
+                                        </div>
+                                        <div class="time">${item.time} (${timeAgo(new Date(item.time))})</div>
+                                    </div>
+                                    <div class="accordion-item-sms">${item.sms}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            accordionDataElement.innerHTML = html;
+        }
+
+        // Toggle accordion
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            header.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        // Toggle view between list and accordion
+        function toggleView() {
+            currentView = viewToggle.checked ? 'accordion' : 'list';
+            
+            if (currentView === 'accordion') {
+                listViewElement.classList.add('hidden');
+                accordionViewElement.classList.add('active');
+                if (lastData) {
+                    renderAccordionData(lastData);
+                }
+            } else {
+                listViewElement.classList.remove('hidden');
+                accordionViewElement.classList.remove('active');
+                if (lastData) {
+                    renderConsoleData(lastData);
+                }
+            }
         }
 
         // Refresh token
@@ -230,10 +495,19 @@
                     // Only update if we have new data
                     if (data && data.data) {
                         lastData = data.data;
-                        renderConsoleData(lastData);
+                        // Render based on current view
+                        if (currentView === 'accordion') {
+                            renderAccordionData(lastData);
+                        } else {
+                            renderConsoleData(lastData);
+                        }
                     } else if (lastData) {
                         // Keep showing old data on failure
-                        renderConsoleData(lastData);
+                        if (currentView === 'accordion') {
+                            renderAccordionData(lastData);
+                        } else {
+                            renderConsoleData(lastData);
+                        }
                     }
                 } else {
                     throw new Error(data.detail || 'Failed to fetch data');
@@ -242,10 +516,15 @@
                 console.error('Error fetching data:', error);
                 // Keep showing old data on failure
                 if (lastData) {
-                    renderConsoleData(lastData);
+                    if (currentView === 'accordion') {
+                        renderAccordionData(lastData);
+                    } else {
+                        renderConsoleData(lastData);
+                    }
                 } else {
                     // If no previous data, show a more user-friendly message
-                    consoleDataElement.innerHTML = '<div class="loading">Waiting for data...</div>';
+                    const targetElement = currentView === 'accordion' ? accordionDataElement : consoleDataElement;
+                    targetElement.innerHTML = '<div class="loading">Waiting for data...</div>';
                 }
             }
         }
@@ -264,6 +543,7 @@
         }
 
         // Event listeners
+        viewToggle.addEventListener('change', toggleView);
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
