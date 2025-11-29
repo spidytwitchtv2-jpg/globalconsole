@@ -1,0 +1,25 @@
+# Core framework - compatible with Python 3.8+ (most common on Namecheap)
+# For Python 3.7, use requirements-py37.txt instead
+fastapi>=0.100.0,<0.116.0
+uvicorn[standard]>=0.20.0,<0.35.0
+# WSGI adapter for Passenger - asgiref converts ASGI to WSGI
+asgiref>=3.4.0,<4.0.0
+
+# Database - SQLAlchemy 2.0 for Python 3.8+, or 1.4.x for Python 3.7
+sqlalchemy>=2.0.0,<3.0.0
+
+# Data validation - Pydantic v2 (works with Python 3.8+)
+pydantic>=2.0.0,<3.0.0
+
+# HTTP requests
+requests>=2.28.0,<3.0.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0,<4.0.0
+passlib[bcrypt]>=1.7.4,<2.0.0
+
+# Form data handling
+python-multipart>=0.0.5,<1.0.0
+
+# Type hints support for older Python versions
+typing_extensions>=4.0.0,<5.0.0
