@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+passenger_debug.log
+import_error.log
+wsgi_error.log
+
+# Temporary files
+*.tmp
+*.bak
+*.zip
+app.zip
+
+# Environment variables
+.env
+.env.local
+
+# Build files
+dist/
+build/
+*.egg-info/
+
+# Windows
+install.bat
+start.bat
+
+# Server-specific (don't commit to repo)
+passenger_wsgi.py
+check_setup.py
+verify_passenger_wsgi.py
+install.sh
+install_packages.py
+install_web.py
+
