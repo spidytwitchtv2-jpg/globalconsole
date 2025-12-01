@@ -151,7 +151,7 @@ def update_token_cache(token, session):
 
 def perform_login(email, password):
     """Perform login to get initial token and session"""
-    url = "https://2oo9.com/api/v1/mnitnetworkcom/auth/login"
+    url = "https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/auth/login"
     headers = {
         'accept': '*/*',
         'accept-language': 'en-US,en;q=0.9,bn;q=0.8',
@@ -195,7 +195,7 @@ def perform_hitauth():
             raise Exception("Failed to obtain session after login")
     
     # External API call to hitauth
-    url = "https://2oo9.com/api/v1/mnitnetworkcom/auth/hitauth"
+    url = "https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/auth/hitauth"
     headers = {
         'accept': '*/*',
         'accept-language': 'en-US,en;q=0.9,bn;q=0.8',
@@ -278,7 +278,7 @@ async def get_console_data():
             token = perform_hitauth()
         
         # External API call to get console data
-        url = "https://2oo9.com/api/v1/mnitnetworkcom/dashboard/getconsole"
+        url = "https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/dashboard/getconsole"
         headers = {
             'accept': '*/*',
             'accept-language': 'en-US,en;q=0.9,bn;q=0.8',
