@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
@@ -6,9 +6,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 import os
+import requests
+from bs4 import BeautifulSoup
+import re
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
@@ -27,6 +30,17 @@ class Message(Base):
     time = Column(String)
     color = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Origin(Base):
+    __tablename__ = "origins"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    app_name = Column(String, unique=True, index=True)
+    login_url = Column(String, nullable=True)
+    url_checked = Column(DateTime, nullable=True)
+    color = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # Create tables
 try:
@@ -95,6 +109,9 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
     # Clear old messages (keep only latest batch)
     db.query(Message).delete()
     
+    # Track unique origins
+    unique_origins = set()
+    
     # Process and store each message
     for msg in messages:
         # Extract app name if not provided
@@ -109,6 +126,9 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
         # Assign color if not provided
         color = msg.get("color") or get_color_for_app(app_name)
         
+        # Add to unique origins
+        unique_origins.add((app_name, color))
+        
         # Create message record
         db_message = Message(
             app_name=app_name,
@@ -118,6 +138,21 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
             color=color
         )
         db.add(db_message)
+    
+    # Update origins table
+    for app_name, color in unique_origins:
+        existing_origin = db.query(Origin).filter(Origin.app_name == app_name).first()
+        if not existing_origin:
+            # Create new origin
+            new_origin = Origin(
+                app_name=app_name,
+                color=color
+            )
+            db.add(new_origin)
+        else:
+            # Update color if changed
+            existing_origin.color = color
+            existing_origin.updated_at = datetime.utcnow()
     
     db.commit()
 
@@ -135,6 +170,80 @@ def get_messages_from_db(db: Session):
         }
         for msg in messages
     ]
+
+def find_login_url(app_name: str) -> Optional[str]:
+    """Crawl and find login URL for an app"""
+    try:
+        # Common search patterns
+        search_queries = [
+            f"{app_name} login",
+            f"{app_name} sign in",
+            f"{app_name} official website login"
+        ]
+        
+        # Try to find official website
+        search_url = f"https://www.google.com/search?q={search_queries[0]}"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(search_url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            return None
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Look for login-related links
+        login_patterns = [
+            r'https?://[^/]*' + re.escape(app_name.lower()) + r'[^/]*/login',
+            r'https?://[^/]*' + re.escape(app_name.lower()) + r'[^/]*/signin',
+            r'https?://[^/]*' + re.escape(app_name.lower()) + r'[^/]*/auth',
+            r'https?://accounts\.' + re.escape(app_name.lower()),
+            r'https?://login\.' + re.escape(app_name.lower()),
+        ]
+        
+        # Search in all links
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            for pattern in login_patterns:
+                if re.search(pattern, href, re.IGNORECASE):
+                    # Clean up Google redirect URLs
+                    if 'google.com/url?q=' in href:
+                        href = href.split('google.com/url?q=')[1].split('&')[0]
+                    return href
+        
+        # Fallback: try common patterns
+        common_urls = [
+            f"https://www.{app_name.lower()}.com/login",
+            f"https://{app_name.lower()}.com/login",
+            f"https://accounts.{app_name.lower()}.com",
+            f"https://login.{app_name.lower()}.com",
+        ]
+        
+        for url in common_urls:
+            try:
+                test_response = requests.head(url, headers=headers, timeout=5, allow_redirects=True)
+                if test_response.status_code < 400:
+                    return url
+            except:
+                continue
+        
+        return None
+    except Exception as e:
+        print(f"Error finding login URL for {app_name}: {e}")
+        return None
+
+def crawl_origin_url(origin_id: int, db: Session):
+    """Background task to crawl and update origin URL"""
+    origin = db.query(Origin).filter(Origin.id == origin_id).first()
+    if not origin:
+        return
+    
+    login_url = find_login_url(origin.app_name)
+    origin.login_url = login_url
+    origin.url_checked = datetime.utcnow()
+    db.commit()
+    print(f"Crawled {origin.app_name}: {login_url or 'Not found'}")
 
 # API Endpoints
 @app.post("/api/console-data")
@@ -167,6 +276,45 @@ async def get_console_data(db: Session = Depends(get_db)):
             "data": {
                 "messages": messages
             }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/origins")
+async def get_origins(db: Session = Depends(get_db)):
+    """Get all unique origins"""
+    try:
+        origins = db.query(Origin).order_by(Origin.app_name).all()
+        return {
+            "status": "success",
+            "origins": [
+                {
+                    "id": origin.id,
+                    "app_name": origin.app_name,
+                    "login_url": origin.login_url,
+                    "url_checked": origin.url_checked.isoformat() if origin.url_checked else None,
+                    "color": origin.color
+                }
+                for origin in origins
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/origins/check-all")
+async def check_all_origins(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Start crawling all origins to find login URLs"""
+    try:
+        origins = db.query(Origin).all()
+        
+        for origin in origins:
+            # Add background task for each origin
+            background_tasks.add_task(crawl_origin_url, origin.id, db)
+        
+        return {
+            "status": "success",
+            "message": f"Started crawling {len(origins)} origins",
+            "count": len(origins)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

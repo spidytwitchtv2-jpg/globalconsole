@@ -292,13 +292,17 @@
     </div>
 
     <div class="form-group">
-      <label for="backendUrl">Backend URL</label>
+      <label for="backendUrl">Backend URL (Fixed)</label>
       <input 
         type="text" 
         id="backendUrl" 
-        placeholder="http://localhost:8002/api/console-data"
-        value="http://localhost:8002/api/console-data"
+        value="https://globalconsole-sthc.onrender.com/api/console-data"
+        readonly
+        style="background: rgba(255, 255, 255, 0.6); cursor: not-allowed;"
       >
+      <div class="helper-text" style="margin-top: 4px;">
+        🔒 Backend URL is fixed and cannot be changed
+      </div>
     </div>
 
     <div class="credentials-section">

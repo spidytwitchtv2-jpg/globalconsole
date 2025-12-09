@@ -587,6 +587,166 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        /* Origins Section Styles */
+        .origins-section {
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+        
+        .btn-origins {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .btn-origins:hover {
+            background-color: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+        
+        .origins-panel {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.3s;
+        }
+        
+        .origins-panel.hidden {
+            max-height: 0;
+            padding: 0 20px;
+        }
+        
+        .origins-panel.show {
+            max-height: 2000px;
+            padding: 20px;
+        }
+        
+        .origins-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #444;
+        }
+        
+        .origins-header h2 {
+            margin: 0;
+            color: #4CAF50;
+            font-size: 18px;
+        }
+        
+        .btn-check-all {
+            background-color: #FF9800;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-check-all:hover {
+            background-color: #F57C00;
+            transform: translateY(-1px);
+        }
+        
+        .btn-check-all:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .origins-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .origin-item {
+            background-color: #3a3a3a;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .origin-item:hover {
+            background-color: #444;
+            transform: translateX(5px);
+        }
+        
+        .origin-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .origin-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .origin-url {
+            flex: 1;
+        }
+        
+        .origin-url a {
+            color: #2196F3;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .origin-url a:hover {
+            text-decoration: underline;
+        }
+        
+        .origin-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .status-found {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+        
+        .status-not-found {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+        
+        .status-checking {
+            background-color: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+        }
+        
+        .status-unchecked {
+            background-color: rgba(158, 158, 158, 0.2);
+            color: #9e9e9e;
+        }
     </style>
 </head>
 <body>
@@ -630,6 +790,25 @@
             <div id="gridView" class="grid-container hidden">
                 <div id="gridData">
                     <div class="loading">Loading data...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Origins Management Section -->
+        <div class="origins-section" style="margin-top: 30px;">
+            <button class="btn-origins" id="showOriginsBtn">
+                📋 View All Origins
+            </button>
+            
+            <div id="originsPanel" class="origins-panel hidden">
+                <div class="origins-header">
+                    <h2>All Unique Origins</h2>
+                    <button class="btn-check-all" id="checkAllBtn">
+                        🔍 Check All URLs
+                    </button>
+                </div>
+                <div id="originsList" class="origins-list">
+                    <div class="loading">Loading origins...</div>
                 </div>
             </div>
         </div>
@@ -1176,6 +1355,144 @@
         messageModal.addEventListener('click', (e) => {
             if (e.target === messageModal) {
                 closeMessageModal();
+            }
+        });
+
+        // Origins Management
+        const showOriginsBtn = document.getElementById('showOriginsBtn');
+        const originsPanel = document.getElementById('originsPanel');
+        const originsList = document.getElementById('originsList');
+        const checkAllBtn = document.getElementById('checkAllBtn');
+        
+        let originsVisible = false;
+        
+        // Toggle origins panel
+        showOriginsBtn.addEventListener('click', async () => {
+            originsVisible = !originsVisible;
+            
+            if (originsVisible) {
+                originsPanel.classList.remove('hidden');
+                originsPanel.classList.add('show');
+                showOriginsBtn.textContent = '📋 Hide Origins';
+                await fetchOrigins();
+            } else {
+                originsPanel.classList.remove('show');
+                originsPanel.classList.add('hidden');
+                showOriginsBtn.textContent = '📋 View All Origins';
+            }
+        });
+        
+        // Fetch origins from API
+        async function fetchOrigins() {
+            try {
+                const response = await fetch('/api/origins');
+                const data = await response.json();
+                
+                if (response.ok && data.origins) {
+                    renderOrigins(data.origins);
+                } else {
+                    originsList.innerHTML = '<div class="loading">Failed to load origins</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching origins:', error);
+                originsList.innerHTML = '<div class="loading">Error loading origins</div>';
+            }
+        }
+        
+        // Render origins list
+        function renderOrigins(origins) {
+            if (!origins || origins.length === 0) {
+                originsList.innerHTML = '<div class="loading">No origins found</div>';
+                return;
+            }
+            
+            let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+            
+            origins.forEach(origin => {
+                let statusClass = 'status-unchecked';
+                let statusText = 'Not Checked';
+                let urlHtml = '<span style="color: #999;">No URL found yet</span>';
+                
+                if (origin.url_checked) {
+                    if (origin.login_url) {
+                        statusClass = 'status-found';
+                        statusText = 'Found';
+                        urlHtml = `<a href="${origin.login_url}" target="_blank">${origin.login_url}</a>`;
+                    } else {
+                        statusClass = 'status-not-found';
+                        statusText = 'Not Found';
+                        urlHtml = '<span style="color: #f44336;">URL not found</span>';
+                    }
+                }
+                
+                html += `
+                    <li class="origin-item">
+                        <div class="origin-info">
+                            <div class="origin-name" style="color: ${origin.color}">${origin.app_name}</div>
+                            <div class="origin-url">${urlHtml}</div>
+                        </div>
+                        <div class="origin-status ${statusClass}">${statusText}</div>
+                    </li>
+                `;
+            });
+            
+            html += '</ul>';
+            originsList.innerHTML = html;
+        }
+        
+        // Check all origins
+        checkAllBtn.addEventListener('click', async () => {
+            checkAllBtn.disabled = true;
+            checkAllBtn.textContent = '🔄 Checking...';
+            
+            // Update all items to checking status
+            const items = originsList.querySelectorAll('.origin-status');
+            items.forEach(item => {
+                if (!item.classList.contains('status-found')) {
+                    item.className = 'origin-status status-checking';
+                    item.textContent = 'Checking...';
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/origins/check-all', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(`Started checking ${data.count} origins. This may take a few minutes...`);
+                    
+                    // Poll for updates every 3 seconds
+                    const pollInterval = setInterval(async () => {
+                        await fetchOrigins();
+                        
+                        // Check if all are done
+                        const unchecked = originsList.querySelectorAll('.status-checking, .status-unchecked');
+                        if (unchecked.length === 0) {
+                            clearInterval(pollInterval);
+                            checkAllBtn.disabled = false;
+                            checkAllBtn.textContent = '🔍 Check All URLs';
+                            showToast('All origins checked!');
+                        }
+                    }, 3000);
+                    
+                    // Stop polling after 2 minutes
+                    setTimeout(() => {
+                        clearInterval(pollInterval);
+                        checkAllBtn.disabled = false;
+                        checkAllBtn.textContent = '🔍 Check All URLs';
+                    }, 120000);
+                } else {
+                    throw new Error(data.detail || 'Failed to start checking');
+                }
+            } catch (error) {
+                console.error('Error checking origins:', error);
+                showToast('Error starting URL check');
+                checkAllBtn.disabled = false;
+                checkAllBtn.textContent = '🔍 Check All URLs';
+                await fetchOrigins();
             }
         });
 

@@ -1,16 +1,15 @@
 // Background service worker for intercepting network requests
 
 const TARGET_API = 'https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/dashboard/getconsole';
-let backendUrl = 'http://localhost:8002/api/console-data';
+const FIXED_BACKEND_URL = 'https://globalconsole-sthc.onrender.com/api/console-data';
+let backendUrl = FIXED_BACKEND_URL;
 let isEnabled = true;
 let userEmail = 'Aktermamber.00.7@gmail.com';
 let userPassword = 'Bd55555$';
 
 // Load settings from storage
-chrome.storage.sync.get(['backendUrl', 'isEnabled', 'email', 'password'], (result) => {
-  if (result.backendUrl) {
-    backendUrl = result.backendUrl;
-  }
+chrome.storage.sync.get(['isEnabled', 'email', 'password'], (result) => {
+  // Backend URL is now fixed, don't load from storage
   if (result.isEnabled !== undefined) {
     isEnabled = result.isEnabled;
   }
@@ -20,16 +19,13 @@ chrome.storage.sync.get(['backendUrl', 'isEnabled', 'email', 'password'], (resul
   if (result.password) {
     userPassword = result.password;
   }
-  console.log('Console Interceptor loaded:', { backendUrl, isEnabled, email: userEmail });
+  console.log('Console Interceptor loaded:', { backendUrl: FIXED_BACKEND_URL, isEnabled, email: userEmail });
 });
 
 // Listen for storage changes
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync') {
-    if (changes.backendUrl) {
-      backendUrl = changes.backendUrl.newValue;
-      console.log('Backend URL updated:', backendUrl);
-    }
+    // Backend URL is fixed, ignore changes
     if (changes.isEnabled) {
       isEnabled = changes.isEnabled.newValue;
       console.log('Interceptor enabled:', isEnabled);
@@ -71,7 +67,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.type === 'GET_STATUS') {
-    sendResponse({ isEnabled, backendUrl, email: userEmail });
+    sendResponse({ isEnabled, backendUrl: FIXED_BACKEND_URL, email: userEmail });
     return true;
   }
   

@@ -11,10 +11,10 @@ const interceptCount = document.getElementById('interceptCount');
 const successCount = document.getElementById('successCount');
 
 // Load saved settings
-chrome.storage.sync.get(['backendUrl', 'isEnabled', 'stats', 'email', 'password'], (result) => {
-  if (result.backendUrl) {
-    backendUrlInput.value = result.backendUrl;
-  }
+chrome.storage.sync.get(['isEnabled', 'stats', 'email', 'password'], (result) => {
+  // Backend URL is fixed
+  backendUrlInput.value = 'https://globalconsole-sthc.onrender.com/api/console-data';
+  
   if (result.email) {
     emailInput.value = result.email;
   }
@@ -32,23 +32,9 @@ chrome.storage.sync.get(['backendUrl', 'isEnabled', 'stats', 'email', 'password'
 
 // Save settings
 saveBtn.addEventListener('click', () => {
-  const url = backendUrlInput.value.trim();
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
   
-  if (!url) {
-    showMessage('Please enter a backend URL', 'error');
-    return;
-  }
-
-  // Validate URL format
-  try {
-    new URL(url);
-  } catch (e) {
-    showMessage('Invalid URL format', 'error');
-    return;
-  }
-
   // Validate email format
   if (email && !email.includes('@')) {
     showMessage('Please enter a valid email', 'error');
@@ -56,7 +42,6 @@ saveBtn.addEventListener('click', () => {
   }
 
   chrome.storage.sync.set({
-    backendUrl: url,
     email: email,
     password: password,
     isEnabled: toggleEnabled.checked
@@ -77,12 +62,7 @@ toggleEnabled.addEventListener('change', () => {
 
 // Test connection
 testBtn.addEventListener('click', async () => {
-  const url = backendUrlInput.value.trim();
-  
-  if (!url) {
-    showMessage('Please enter a backend URL', 'error');
-    return;
-  }
+  const url = 'https://globalconsole-sthc.onrender.com/api/console-data';
 
   showMessage('Testing connection...', 'success');
   testBtn.disabled = true;
