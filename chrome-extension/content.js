@@ -10,11 +10,13 @@ console.log('%c[Interceptor] Target API:', 'color: #2196F3', TARGET_API);
 
 // Intercept fetch requests - MUST be synchronous override
 const originalFetch = window.fetch;
+let fetchCallCount = 0;
 window.fetch = async function(...args) {
   const [url, options] = args;
   
+  fetchCallCount++;
   const urlString = typeof url === 'string' ? url : url.toString();
-  console.log('%c[Interceptor] Fetch call:', 'color: #9E9E9E', urlString);
+  console.log(`%c[Interceptor] Fetch call #${fetchCallCount}:`, 'color: #9E9E9E', urlString);
   
   // Call original fetch
   const response = await originalFetch.apply(this, args);
@@ -22,6 +24,7 @@ window.fetch = async function(...args) {
   // Check if this is the target API - check both relative and absolute URLs
   if (urlString.includes('getconsole') || urlString.includes('/dashboard/getconsole')) {
     console.log('%c[Interceptor] ✓ MATCHED getconsole API!', 'color: #4CAF50; font-weight: bold', urlString);
+    console.log('%c[Interceptor] Response status:', 'color: #2196F3', response.status);
     
     // Clone the response so we can read it without consuming it
     const clonedResponse = response.clone();
@@ -61,14 +64,17 @@ XMLHttpRequest.prototype.open = function(method, url, ...rest) {
   return originalOpen.apply(this, [method, url, ...rest]);
 };
 
+let xhrCallCount = 0;
 XMLHttpRequest.prototype.send = function(...args) {
   const url = this._url || '';
-  console.log('%c[Interceptor] XHR send:', 'color: #9E9E9E', url);
+  xhrCallCount++;
+  console.log(`%c[Interceptor] XHR send #${xhrCallCount}:`, 'color: #9E9E9E', url);
   
   if (url && (url.includes('getconsole') || url.includes('/dashboard/getconsole'))) {
     console.log('%c[Interceptor] ✓ MATCHED XHR getconsole API!', 'color: #4CAF50; font-weight: bold', url);
     
     this.addEventListener('load', function() {
+      console.log('%c[Interceptor] XHR Response status:', 'color: #2196F3', this.status);
       try {
         const data = JSON.parse(this.responseText);
         console.log('%c[Interceptor] ✓ XHR Data intercepted:', 'color: #4CAF50', data);
@@ -110,6 +116,7 @@ if (document.readyState === 'loading') {
 if (window.PerformanceObserver) {
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
+      console.log('%c[Interceptor] 📡 Network request detected:', 'color: #9E9E9E', entry.name);
       if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
         if (entry.name.includes('getconsole')) {
           console.log('%c[Interceptor] 🔍 Performance API detected getconsole request:', 'color: #FF9800', entry.name);
@@ -120,5 +127,31 @@ if (window.PerformanceObserver) {
   observer.observe({ entryTypes: ['resource'] });
   console.log('%c[Interceptor] ✓ Performance observer installed', 'color: #4CAF50');
 }
+
+// Also check existing performance entries
+setTimeout(() => {
+  const entries = performance.getEntriesByType('resource');
+  console.log('%c[Interceptor] 📊 Total network requests so far:', 'color: #2196F3', entries.length);
+  const getconsoleEntries = entries.filter(e => e.name.includes('getconsole'));
+  if (getconsoleEntries.length > 0) {
+    console.log('%c[Interceptor] 🎯 Found existing getconsole requests:', 'color: #FF9800', getconsoleEntries);
+  }
+}, 2000);
+
+// Add a manual trigger function for testing
+window.testInterceptor = function() {
+  console.log('%c[Interceptor] 🧪 Testing interceptor...', 'color: #9C27B0');
+  fetch('https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/dashboard/getconsole', {
+    headers: {
+      'mhitauth': 'test-token'
+    }
+  }).then(r => {
+    console.log('%c[Interceptor] 🧪 Test fetch completed', 'color: #9C27B0', r.status);
+  }).catch(e => {
+    console.log('%c[Interceptor] 🧪 Test fetch failed (expected):', 'color: #9C27B0', e.message);
+  });
+};
+
+console.log('%c[Interceptor] 💡 TIP: Run testInterceptor() to manually test', 'color: #2196F3');
 
 })();
