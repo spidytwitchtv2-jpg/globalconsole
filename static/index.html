@@ -661,108 +661,15 @@
         // Animation tracking
         let previousMessages = [];
 
-        // Format time ago with Bangladesh timezone conversion
+        // Display time as received from server without conversion
         function timeAgo(timeInput) {
             // Handle case where we only have time without date
             if (!timeInput || timeInput === 'unknown time') {
                 return 'unknown time';
             }
             
-            // Convert to string if it's not already
-            const timeString = String(timeInput);
-            
-            // If timeString is a time-only format like "20:23:24"
-            if (timeString.includes(':') && !timeString.includes('-')) {
-                // Parse the time string assuming it's from today
-                const today = new Date();
-                
-                // Get Bangladesh time (UTC+6)
-                const bdOffset = 6 * 60; // Bangladesh is UTC+6 in minutes
-                const utc = today.getTime() + (today.getTimezoneOffset() * 60000);
-                const bdTime = new Date(utc + (bdOffset * 60000));
-                
-                const [hours, minutes, sec] = timeString.split(':').map(Number);
-                
-                if (!isNaN(hours) && !isNaN(minutes)) {
-                    // Create date object with the time string (assuming it's in Bangladesh time)
-                    const date = new Date(bdTime.getFullYear(), bdTime.getMonth(), bdTime.getDate(), hours, minutes, sec || 0);
-                    
-                    // Calculate time difference using Bangladesh time
-                    const diffMs = bdTime - date;
-                    const secondsElapsed = Math.floor(diffMs / 1000);
-                    
-                    // Handle negative time (future time) - show as "Just now"
-                    if (secondsElapsed < 0) {
-                        return "Just now";
-                    }
-                    
-                    // Return relative time in proper format
-                    if (secondsElapsed < 60) {
-                        return Math.floor(secondsElapsed) + "s ago BDT";
-                    } else if (secondsElapsed < 3600) {
-                        const mins = Math.floor(secondsElapsed / 60);
-                        return mins + "m ago BDT";
-                    } else if (secondsElapsed < 86400) {
-                        const hrs = Math.floor(secondsElapsed / 3600);
-                        return hrs + "h ago BDT";
-                    } else {
-                        // More than a day, just show the time with BDT
-                        return timeString + " BDT";
-                    }
-                } else {
-                    // Invalid time format, return as-is with BDT
-                    return timeString + " BDT";
-                }
-            }
-            
-            // If it's a full datetime string, convert it
-            const date = timeInput instanceof Date ? timeInput : new Date(timeInput);
-            if (isNaN(date.getTime())) {
-                return timeString + " BDT"; // Return as-is if invalid
-            }
-            
-            // Convert to Bangladesh time for comparison
-            const bdOffset = 6 * 60; // Bangladesh is UTC+6 in minutes
-            const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-            const bdDateTime = new Date(utc + (bdOffset * 60000));
-            
-            const bdNow = new Date();
-            const utcNow = bdNow.getTime() + (bdNow.getTimezoneOffset() * 60000);
-            const bdCurrentTime = new Date(utcNow + (bdOffset * 60000));
-            
-            const seconds = Math.floor((bdCurrentTime - bdDateTime) / 1000);
-            
-            // Handle negative time (future time) - show as "Just now"
-            if (seconds < 0) {
-                return "Just now";
-            }
-            
-            // Less than 60 seconds
-            if (seconds < 60) {
-                return Math.floor(seconds) + "s ago BDT";
-            }
-            
-            // Less than 1 hour
-            if (seconds < 3600) {
-                const minutes = Math.floor(seconds / 60);
-                return minutes + "m ago BDT";
-            }
-            
-            // Less than 1 day
-            if (seconds < 86400) {
-                const hours = Math.floor(seconds / 3600);
-                return hours + "h ago BDT";
-            }
-            
-            // Less than 1 week
-            if (seconds < 604800) {
-                const days = Math.floor(seconds / 86400);
-                return days + "d ago BDT";
-            }
-            
-            // More than 1 week
-            const weeks = Math.floor(seconds / 604800);
-            return weeks + "w ago BDT";
+            // Convert to string and return as-is
+            return String(timeInput);
         }
 
         // Copy to clipboard
@@ -1100,24 +1007,6 @@
             }
         }
 
-        // Refresh token
-        async function refreshToken() {
-            try {
-                const response = await fetch('/api/refresh-token');
-                const data = await response.json();
-                
-                if (response.ok) {
-                    return data.token;
-                } else {
-                    throw new Error(data.detail || 'Failed to refresh token');
-                }
-            } catch (error) {
-                console.error('Error refreshing token:', error);
-                // Don't show alert, just log the error and continue
-                return null;
-            }
-        }
-
         // Fetch console data
         async function fetchConsoleData() {
             try {
@@ -1181,8 +1070,6 @@
             }
             
             refreshInterval = setInterval(async () => {
-                const token = await refreshToken();
-                // Even if token refresh fails, still try to fetch data
                 await fetchConsoleData();
             }, 5000);
         }
@@ -1295,34 +1182,17 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             // Show loading message
-            consoleDataElement.innerHTML = '<div class="loading">Initializing application...</div>';
+            consoleDataElement.innerHTML = '<div class="loading">Loading data...</div>';
             
             try {
-                // Perform initial login
-                const loginResponse = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: 'Aktermamber.00.7@gmail.com',
-                        password: 'Bd55555$'
-                    })
-                });
-                
-                if (!loginResponse.ok) {
-                    throw new Error('Login failed');
-                }
-                
                 // Initial load
-                await refreshToken();
                 await fetchConsoleData();
                 
                 // Start auto-refresh
                 startAutoRefresh();
             } catch (error) {
                 console.error('Initialization error:', error);
-                consoleDataElement.innerHTML = '<div class="loading">Error initializing application. Please refresh the page.</div>';
+                consoleDataElement.innerHTML = '<div class="loading">Error loading data. Please refresh the page.</div>';
             }
         });
     </script>
