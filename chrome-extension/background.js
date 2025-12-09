@@ -44,22 +44,25 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'API_RESPONSE') {
+    console.log('✓ Received API_RESPONSE from content script');
+    
     if (!isEnabled) {
-      console.log('Interceptor disabled, skipping...');
+      console.log('✗ Interceptor disabled, skipping...');
       sendResponse({ success: false, message: 'Interceptor is disabled' });
       return;
     }
 
-    console.log('Intercepted API response:', request.data);
+    console.log('✓ Intercepted API response:', request.data);
+    console.log('✓ Forwarding to backend:', FIXED_BACKEND_URL);
     
     // Forward to backend
     forwardToBackend(request.data)
       .then(result => {
-        console.log('Successfully forwarded to backend:', result);
+        console.log('✓ Successfully forwarded to backend:', result);
         sendResponse({ success: true, result });
       })
       .catch(error => {
-        console.error('Error forwarding to backend:', error);
+        console.error('✗ Error forwarding to backend:', error);
         sendResponse({ success: false, error: error.message });
       });
     
@@ -80,7 +83,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Forward data to backend
 async function forwardToBackend(data) {
   try {
-    const response = await fetch(backendUrl, {
+    console.log('→ Sending POST to:', FIXED_BACKEND_URL);
+    console.log('→ Payload:', JSON.stringify(data).substring(0, 200) + '...');
+    
+    const response = await fetch(FIXED_BACKEND_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,11 +94,16 @@ async function forwardToBackend(data) {
       body: JSON.stringify(data)
     });
 
+    console.log('← Backend response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Backend responded with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('✗ Backend error response:', errorText);
+      throw new Error(`Backend responded with status: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('✓ Backend success response:', result);
     
     // Update badge to show success
     chrome.action.setBadgeText({ text: '✓' });
@@ -103,6 +114,8 @@ async function forwardToBackend(data) {
     
     return result;
   } catch (error) {
+    console.error('✗ Forward to backend failed:', error);
+    
     // Update badge to show error
     chrome.action.setBadgeText({ text: '✗' });
     chrome.action.setBadgeBackgroundColor({ color: '#f44336' });

@@ -69,13 +69,14 @@ class ConsoleDataResponse(BaseModel):
 # FastAPI app
 app = FastAPI(title="Console App API")
 
-# CORS middleware
+# CORS middleware - Allow all origins, no restrictions
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=False,  # Set to False when using allow_origins=["*"]
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"],  # Expose all headers
 )
 
 # Dependency
