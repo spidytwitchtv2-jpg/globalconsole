@@ -3,16 +3,24 @@
 const TARGET_API = 'https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/dashboard/getconsole';
 let backendUrl = 'http://localhost:8002/api/console-data';
 let isEnabled = true;
+let userEmail = 'Aktermamber.00.7@gmail.com';
+let userPassword = 'Bd55555$';
 
 // Load settings from storage
-chrome.storage.sync.get(['backendUrl', 'isEnabled'], (result) => {
+chrome.storage.sync.get(['backendUrl', 'isEnabled', 'email', 'password'], (result) => {
   if (result.backendUrl) {
     backendUrl = result.backendUrl;
   }
   if (result.isEnabled !== undefined) {
     isEnabled = result.isEnabled;
   }
-  console.log('Console Interceptor loaded:', { backendUrl, isEnabled });
+  if (result.email) {
+    userEmail = result.email;
+  }
+  if (result.password) {
+    userPassword = result.password;
+  }
+  console.log('Console Interceptor loaded:', { backendUrl, isEnabled, email: userEmail });
 });
 
 // Listen for storage changes
@@ -25,6 +33,14 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (changes.isEnabled) {
       isEnabled = changes.isEnabled.newValue;
       console.log('Interceptor enabled:', isEnabled);
+    }
+    if (changes.email) {
+      userEmail = changes.email.newValue;
+      console.log('Email updated:', userEmail);
+    }
+    if (changes.password) {
+      userPassword = changes.password.newValue;
+      console.log('Password updated');
     }
   }
 });
@@ -55,7 +71,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.type === 'GET_STATUS') {
-    sendResponse({ isEnabled, backendUrl });
+    sendResponse({ isEnabled, backendUrl, email: userEmail });
+    return true;
+  }
+  
+  if (request.type === 'GET_CREDENTIALS') {
+    sendResponse({ email: userEmail, password: userPassword });
     return true;
   }
 });

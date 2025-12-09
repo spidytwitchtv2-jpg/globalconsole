@@ -67,6 +67,19 @@ The extension needs to know where to send the intercepted data. You can configur
 - **Remote server**: `https://your-domain.com/api/console-data`
 - **Custom port**: `http://localhost:3000/api/console-data`
 
+### Account Credentials (Helper)
+
+The popup includes email and password fields pre-filled with the default credentials:
+- **Email**: `Aktermamber.00.7@gmail.com`
+- **Password**: `Bd55555$`
+
+These are stored locally in the extension and serve as a reference. You can:
+- Update them if your credentials change
+- Use them as a reminder when logging into v2.mnitnetwork.com
+- Access them anytime from the extension popup
+
+**Note**: These credentials are only stored locally in your browser and are not sent anywhere except when you manually log into the website.
+
 ### Enable/Disable
 
 Use the toggle switch in the popup to enable or disable the interceptor without uninstalling the extension.

@@ -1,6 +1,8 @@
 // Popup script for managing settings
 
 const backendUrlInput = document.getElementById('backendUrl');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
 const toggleEnabled = document.getElementById('toggleEnabled');
 const saveBtn = document.getElementById('saveBtn');
 const testBtn = document.getElementById('testBtn');
@@ -9,9 +11,15 @@ const interceptCount = document.getElementById('interceptCount');
 const successCount = document.getElementById('successCount');
 
 // Load saved settings
-chrome.storage.sync.get(['backendUrl', 'isEnabled', 'stats'], (result) => {
+chrome.storage.sync.get(['backendUrl', 'isEnabled', 'stats', 'email', 'password'], (result) => {
   if (result.backendUrl) {
     backendUrlInput.value = result.backendUrl;
+  }
+  if (result.email) {
+    emailInput.value = result.email;
+  }
+  if (result.password) {
+    passwordInput.value = result.password;
   }
   if (result.isEnabled !== undefined) {
     toggleEnabled.checked = result.isEnabled;
@@ -25,6 +33,8 @@ chrome.storage.sync.get(['backendUrl', 'isEnabled', 'stats'], (result) => {
 // Save settings
 saveBtn.addEventListener('click', () => {
   const url = backendUrlInput.value.trim();
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
   
   if (!url) {
     showMessage('Please enter a backend URL', 'error');
@@ -39,8 +49,16 @@ saveBtn.addEventListener('click', () => {
     return;
   }
 
+  // Validate email format
+  if (email && !email.includes('@')) {
+    showMessage('Please enter a valid email', 'error');
+    return;
+  }
+
   chrome.storage.sync.set({
     backendUrl: url,
+    email: email,
+    password: password,
     isEnabled: toggleEnabled.checked
   }, () => {
     showMessage('Settings saved successfully!', 'success');
