@@ -1,30 +1,34 @@
 // Content script to intercept fetch/XHR requests
+(function() {
+  'use strict';
 
 const TARGET_API = 'https://v2.mnitnetwork.com/api/v1/mnitnetworkcom/dashboard/getconsole';
 
-console.log('Console Data Interceptor content script loaded on:', window.location.href);
+console.log('%c[Interceptor] Content script loaded', 'color: #4CAF50; font-weight: bold');
+console.log('%c[Interceptor] URL:', 'color: #2196F3', window.location.href);
+console.log('%c[Interceptor] Target API:', 'color: #2196F3', TARGET_API);
 
-// Intercept fetch requests
+// Intercept fetch requests - MUST be synchronous override
 const originalFetch = window.fetch;
 window.fetch = async function(...args) {
   const [url, options] = args;
   
-  console.log('Fetch intercepted:', url);
+  const urlString = typeof url === 'string' ? url : url.toString();
+  console.log('%c[Interceptor] Fetch call:', 'color: #9E9E9E', urlString);
   
   // Call original fetch
   const response = await originalFetch.apply(this, args);
   
   // Check if this is the target API - check both relative and absolute URLs
-  const urlString = typeof url === 'string' ? url : url.toString();
-  if (urlString.includes('/dashboard/getconsole') || urlString.includes('getconsole')) {
-    console.log('✓ Matched getconsole API call:', urlString);
+  if (urlString.includes('getconsole') || urlString.includes('/dashboard/getconsole')) {
+    console.log('%c[Interceptor] ✓ MATCHED getconsole API!', 'color: #4CAF50; font-weight: bold', urlString);
     
     // Clone the response so we can read it without consuming it
     const clonedResponse = response.clone();
     
     try {
       const data = await clonedResponse.json();
-      console.log('✓ Console API data intercepted:', data);
+      console.log('%c[Interceptor] ✓ Data intercepted:', 'color: #4CAF50', data);
       
       // Send to background script
       chrome.runtime.sendMessage({
@@ -32,15 +36,15 @@ window.fetch = async function(...args) {
         data: data,
         url: urlString,
         timestamp: new Date().toISOString()
-      }, (response) => {
+      }, (msgResponse) => {
         if (chrome.runtime.lastError) {
-          console.error('✗ Error sending to background:', chrome.runtime.lastError);
+          console.error('%c[Interceptor] ✗ Error sending to background:', 'color: #f44336', chrome.runtime.lastError);
         } else {
-          console.log('✓ Data forwarded to backend:', response);
+          console.log('%c[Interceptor] ✓ Forwarded to backend:', 'color: #4CAF50', msgResponse);
         }
       });
     } catch (error) {
-      console.error('✗ Error processing intercepted response:', error);
+      console.error('%c[Interceptor] ✗ Error processing response:', 'color: #f44336', error);
     }
   }
   
@@ -58,31 +62,32 @@ XMLHttpRequest.prototype.open = function(method, url, ...rest) {
 };
 
 XMLHttpRequest.prototype.send = function(...args) {
-  console.log('XHR send intercepted:', this._url);
+  const url = this._url || '';
+  console.log('%c[Interceptor] XHR send:', 'color: #9E9E9E', url);
   
-  if (this._url && (this._url.includes('/dashboard/getconsole') || this._url.includes('getconsole'))) {
-    console.log('✓ Matched XHR getconsole API call:', this._url);
+  if (url && (url.includes('getconsole') || url.includes('/dashboard/getconsole'))) {
+    console.log('%c[Interceptor] ✓ MATCHED XHR getconsole API!', 'color: #4CAF50; font-weight: bold', url);
     
     this.addEventListener('load', function() {
       try {
         const data = JSON.parse(this.responseText);
-        console.log('✓ Console API data (XHR) intercepted:', data);
+        console.log('%c[Interceptor] ✓ XHR Data intercepted:', 'color: #4CAF50', data);
         
         // Send to background script
         chrome.runtime.sendMessage({
           type: 'API_RESPONSE',
           data: data,
-          url: this._url,
+          url: url,
           timestamp: new Date().toISOString()
-        }, (response) => {
+        }, (msgResponse) => {
           if (chrome.runtime.lastError) {
-            console.error('✗ Error sending to background:', chrome.runtime.lastError);
+            console.error('%c[Interceptor] ✗ Error sending to background:', 'color: #f44336', chrome.runtime.lastError);
           } else {
-            console.log('✓ Data forwarded to backend:', response);
+            console.log('%c[Interceptor] ✓ Forwarded to backend:', 'color: #4CAF50', msgResponse);
           }
         });
       } catch (error) {
-        console.error('✗ Error processing XHR response:', error);
+        console.error('%c[Interceptor] ✗ Error processing XHR:', 'color: #f44336', error);
       }
     });
   }
@@ -90,13 +95,30 @@ XMLHttpRequest.prototype.send = function(...args) {
   return originalSend.apply(this, args);
 };
 
-console.log('✓ Fetch and XHR interceptors installed successfully');
+console.log('%c[Interceptor] ✓ Fetch and XHR interceptors installed', 'color: #4CAF50; font-weight: bold');
 
 // Log when page is fully loaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('✓ Page loaded, interceptors ready');
+    console.log('%c[Interceptor] ✓ Page loaded, interceptors ready', 'color: #4CAF50');
   });
 } else {
-  console.log('✓ Page already loaded, interceptors ready');
+  console.log('%c[Interceptor] ✓ Page already loaded, interceptors ready', 'color: #4CAF50');
 }
+
+// Monitor all network requests via Performance API
+if (window.PerformanceObserver) {
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
+        if (entry.name.includes('getconsole')) {
+          console.log('%c[Interceptor] 🔍 Performance API detected getconsole request:', 'color: #FF9800', entry.name);
+        }
+      }
+    }
+  });
+  observer.observe({ entryTypes: ['resource'] });
+  console.log('%c[Interceptor] ✓ Performance observer installed', 'color: #4CAF50');
+}
+
+})();

@@ -192,6 +192,7 @@ def find_login_url(app_name: str) -> Optional[str]:
         if response.status_code != 200:
             return None
         
+        # Use html.parser instead of lxml for Python 3.13 compatibility
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Look for login-related links
