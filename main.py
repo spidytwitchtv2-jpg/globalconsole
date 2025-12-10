@@ -5,13 +5,14 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import json
 import os
 import requests
 from bs4 import BeautifulSoup
 import re
+import time
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
@@ -113,8 +114,13 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
     # Track unique origins
     unique_origins = set()
     
-    # Process and store each message
-    for msg in messages:
+    # Reverse messages so newest ones are processed last (get latest created_at)
+    # This ensures newest messages appear first when ordered by created_at desc
+    reversed_messages = list(reversed(messages))
+    
+    # Process and store each message with incremental timestamps
+    base_time = datetime.utcnow()
+    for i, msg in enumerate(reversed_messages):
         # Extract app name if not provided
         app_name = msg.get("app_name", "Unknown")
         sms_content = msg.get("sms", "")
@@ -130,13 +136,16 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
         # Add to unique origins
         unique_origins.add((app_name, color))
         
-        # Create message record
+        # Create message record with incremental timestamp
+        # Each message gets a slightly later timestamp to ensure proper ordering
+        message_time = base_time + timedelta(seconds=i)
         db_message = Message(
             app_name=app_name,
             carrier=msg.get("carrier", ""),
             sms=sms_content,
             time=msg.get("time", ""),
-            color=color
+            color=color,
+            created_at=message_time
         )
         db.add(db_message)
     
