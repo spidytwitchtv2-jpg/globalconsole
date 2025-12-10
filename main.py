@@ -114,13 +114,14 @@ def process_incoming_data(payload: ConsoleDataPayload, db: Session):
     # Track unique origins
     unique_origins = set()
     
-    # Reverse messages so newest ones are processed last (get latest created_at)
-    # This ensures newest messages appear first when ordered by created_at desc
-    reversed_messages = list(reversed(messages))
+    # Process messages in original order with incremental timestamps
+    # Assuming external API sends oldest first, newest last
+    # Each subsequent message gets a later timestamp
     
     # Process and store each message with incremental timestamps
+    # We want newest messages to have the LATEST timestamps
     base_time = datetime.utcnow()
-    for i, msg in enumerate(reversed_messages):
+    for i, msg in enumerate(messages):  # Use original order, not reversed
         # Extract app name if not provided
         app_name = msg.get("app_name", "Unknown")
         sms_content = msg.get("sms", "")
